@@ -19,7 +19,7 @@ class RoomMessages {
     try {
       await DB.query(messagesQuery);
     } catch (error) {
-      console.log('createChatRoomsTable error:', error);
+      console.log('Ошибка создания таблицы сообщений', error);
     }
   }
 

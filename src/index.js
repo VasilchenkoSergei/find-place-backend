@@ -3,31 +3,31 @@ import fastifyIO from 'fastify-socket.io';
 import cors from '@fastify/cors';
 import User from './user.js';
 import ChatRoom from './chatRoom.js';
+import RoomMessages from './roomMessages.js';
 
 const PORT = 3030;
 
-let users = [
-  {
-    userId: 'admin',
-    userName: 'Константинопольский КОнстнатин Констнатинович',
-    phoneNumber: '899912345678',
-    avatar: '',
-    online: false,
-    chatRooms: ['chatroom-1', 'chatroom-2'],
-  },
-  {
-    userId: 'guest',
-    userName: 'Леопольдов Леопольд Леопольдович',
-    phoneNumber: '888812345678',
-    avatar: '',
-    online: true,
-    chatRooms: ['chatroom-1'],
-  },
-];
+// let users = [
+//   {
+//     userId: 'admin',
+//     userName: 'Константинопольский КОнстнатин Констнатинович',
+//     phoneNumber: '899912345678',
+//     avatar: '',
+//     online: false,
+//     chatRooms: ['chatroom-1', 'chatroom-2'],
+//   },
+//   {
+//     userId: 'guest',
+//     userName: 'Леопольдов Леопольд Леопольдович',
+//     phoneNumber: '888812345678',
+//     avatar: '',
+//     online: true,
+//     chatRooms: ['chatroom-1'],
+//   },
+// ];
 
-await User.createUserTable();
+await User.createUsersTable();
 await ChatRoom.createChatRoomsTable();
-// await ChatRoom.createRoom('chatroom-1', 'Первая комната');
 
 const fastifyServer = Fastify({
   logger: true,
@@ -66,15 +66,15 @@ fastifyServer.get('/create-user', async (request, reply) => {
 fastifyServer.get('/get-messages-by-room-id/:roomId', async (request, reply) => {
   const { roomId } = request.params;
 
-  const currentRoomMessages = await ChatRoom.getRoomMessages(roomId, 100);
+  const currentRoomMessages = await RoomMessages.getRoomMessages(roomId, 100);
 
-  reply.send({ messages: currentRoomMessages });
+  reply.send(currentRoomMessages);
 });
 
 fastifyServer.get('/get-user-rooms', async (_, reply) => {
   const chatRooms = await ChatRoom.getAllRooms();
 
-  reply.send({ rooms: chatRooms });
+  reply.send(chatRooms);
 });
 
 fastifyServer.ready().then(() => {
@@ -89,8 +89,7 @@ fastifyServer.ready().then(() => {
       try {
         const { roomId, userId, text } = data;
 
-        const newMessage = await ChatRoom.createMessage(roomId, userId, text);
-        console.log('🚀 ~ newMessage:', newMessage)
+        const newMessage = await RoomMessages.createMessage(roomId, userId, text);
 
         socket.emit('server_response', { message: 'Сообщение получено!' });
         fastifyServer.io.to(roomId).emit('new_message', newMessage);

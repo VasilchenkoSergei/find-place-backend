@@ -4,30 +4,12 @@ import cors from '@fastify/cors';
 import User from './user.js';
 import ChatRoom from './chatRoom.js';
 import RoomMessages from './roomMessages.js';
+import DatabaseInitialize from './databaseInitialize.js';
+import { PLACES_LIST_MOCK } from './mocks/index.js';
 
 const PORT = 3030;
 
-// let users = [
-//   {
-//     userId: 'admin',
-//     userName: 'Константинопольский КОнстнатин Констнатинович',
-//     phoneNumber: '899912345678',
-//     avatar: '',
-//     online: false,
-//     chatRooms: ['chatroom-1', 'chatroom-2'],
-//   },
-//   {
-//     userId: 'guest',
-//     userName: 'Леопольдов Леопольд Леопольдович',
-//     phoneNumber: '888812345678',
-//     avatar: '',
-//     online: true,
-//     chatRooms: ['chatroom-1'],
-//   },
-// ];
-
-await User.createUsersTable();
-await ChatRoom.createChatRoomsTable();
+DatabaseInitialize.initialize();
 
 const fastifyServer = Fastify({
   logger: true,
@@ -47,26 +29,23 @@ fastifyServer.register(fastifyIO, {
   },
 });
 
-// fastifyServer.get('/', function (request, reply) {
-//   fastifyServer.io.emit('hello', { message: 'Hello!' });
-// });
+fastifyServer.post('/create-user', async (request, reply) => {
+  const user = await User.createUser(request.body);
 
-// await User.createUser({
-//   userId: 'admin',
-//   userName: 'Константинопольский КОнстнатин Констнатинович',
-//   phoneNumber: '899912345678',
-//   avatar: '',
-//   online: false,
-// });
-
-fastifyServer.get('/create-user', async (request, reply) => {
-  const user = await User.createUser(req.body);
+  reply.send(user);
 });
 
-fastifyServer.get('/get-messages-by-room-id/:roomId', async (request, reply) => {
-  const { roomId } = request.params;
+fastifyServer.post('/create-user-room', async (request, reply) => {
+  const { placeId, placeName } = request.body;
+  const userRoom = await ChatRoom.createRoom(placeId, placeName);
 
-  const currentRoomMessages = await RoomMessages.getRoomMessages(roomId, 100);
+  reply.send(userRoom);
+});
+
+fastifyServer.get('/get-messages-by-room-id/:placeId', async (request, reply) => {
+  const { placeId } = request.params;
+
+  const currentRoomMessages = await RoomMessages.getRoomMessages(placeId, 100);
 
   reply.send(currentRoomMessages);
 });
@@ -77,22 +56,38 @@ fastifyServer.get('/get-user-rooms', async (_, reply) => {
   reply.send(chatRooms);
 });
 
+fastifyServer.get('/get-places', async (_, reply) => {
+  const allRooms = await ChatRoom.getAllRooms();
+  const roomsIds = allRooms?.map(({ placeId }) => placeId);
+  const formattedPlaces = PLACES_LIST_MOCK.map((place) => {
+    if (roomsIds.includes(place.id)) {
+      return {
+        ...place,
+        hasRoom: true,
+      };
+    }
+    return place;
+  });
+
+  reply.send(formattedPlaces);
+});
+
 fastifyServer.ready().then(() => {
   fastifyServer.io.on('connection', (socket) => {
-    socket.on('join_room', (roomId) => {
-      socket.join(roomId);
+    socket.on('join_room', (placeId) => {
+      socket.join(placeId);
     });
 
     socket.on('client_message', async (data) => {
       console.log('Сообщение от клиента:', data);
 
       try {
-        const { roomId, userId, text } = data;
+        const { placeId, userId, text } = data;
 
-        const newMessage = await RoomMessages.createMessage(roomId, userId, text);
+        const newMessage = await RoomMessages.createMessage(placeId, userId, text);
 
         socket.emit('server_response', { message: 'Сообщение получено!' });
-        fastifyServer.io.to(roomId).emit('new_message', newMessage);
+        fastifyServer.io.to(placeId).emit('new_message', newMessage);
 
         socket.on('disconnect', () => {
           console.log('Клиент отключился:', socket.id);

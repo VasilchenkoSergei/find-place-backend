@@ -7,7 +7,7 @@ class RoomMessages {
     const messagesQuery = `
       CREATE TABLE IF NOT EXISTS ${MESSAGES_TABLE_NAME} (
         id SERIAL PRIMARY KEY,
-        room_id VARCHAR(150) REFERENCES ${tableRef}(room_id) ON DELETE CASCADE,
+        place_id VARCHAR(150) REFERENCES ${tableRef}(place_id) ON DELETE CASCADE,
         sent_by_user_id VARCHAR(150) NOT NULL,
         text TEXT NOT NULL,
         sent_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -23,14 +23,14 @@ class RoomMessages {
     }
   }
 
-  static async getRoomMessages(roomId, limit) {
+  static async getRoomMessages(placeId, limit) {
     const query = `
       SELECT * FROM ${MESSAGES_TABLE_NAME} 
-      WHERE room_id = $1 
+      WHERE place_id = $1 
       ORDER BY sent_date ASC 
       LIMIT $2
     `;
-    const values = [roomId, limit];
+    const values = [placeId, limit];
 
     try {
       const result = await DB.query(query, values);
@@ -41,13 +41,13 @@ class RoomMessages {
     }
   }
 
-  static async createMessage(roomId, sentByUserId, text) {
+  static async createMessage(placeId, sentByUserId, text) {
     const query = `
-      INSERT INTO ${MESSAGES_TABLE_NAME} (room_id, sent_by_user_id, text)
+      INSERT INTO ${MESSAGES_TABLE_NAME} (place_id, sent_by_user_id, text)
       VALUES ($1, $2, $3)
       RETURNING *
     `;
-    const values = [roomId, sentByUserId, text];
+    const values = [placeId, sentByUserId, text];
 
     try {
       const result = await DB.query(query, values);

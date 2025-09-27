@@ -6,8 +6,8 @@ class ChatRoom {
   static async createChatRoomsTable() {
     const chatRoomsQuery = `
       CREATE TABLE IF NOT EXISTS ${CHAT_ROOMS_TABLE_NAME} (
-          id SERIAL PRIMARY KEY NOT NULL,
-          place_id VARCHAR(150) NOT NULL UNIQUE,
+          id SERIAL PRIMARY KEY,
+          place_id VARCHAR(150) UNIQUE NOT NULL,
           place_name VARCHAR(150) NOT NULL,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

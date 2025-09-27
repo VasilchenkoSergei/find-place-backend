@@ -1,14 +1,15 @@
 import DB from './database.js';
 
-const ROOM_USERS_TABLE_NAME = 'room_users';
+export const USERS_TABLE_NAME = 'users';
 
 class User {
   static async createUsersTable() {
     const usersQuery = `
-      CREATE TABLE IF NOT EXISTS ${ROOM_USERS_TABLE_NAME} (
-        user_id VARCHAR(50) PRIMARY KEY,
+      CREATE TABLE IF NOT EXISTS ${USERS_TABLE_NAME} (
+        id SERIAL PRIMARY KEY,   
+        user_id VARCHAR(50) UNIQUE NOT NULL,
         user_name VARCHAR(150) NOT NULL,
-        phone_number VARCHAR(20) NOT NULL UNIQUE,
+        phone_number VARCHAR(20) UNIQUE NOT NULL,
         avatar TEXT DEFAULT '',
         online BOOLEAN DEFAULT FALSE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -20,7 +21,7 @@ class User {
 
   static async createUser(userData) {
     const query = `
-      INSERT INTO ${ROOM_USERS_TABLE_NAME} (user_id, user_name, phone_number, avatar, online)
+      INSERT INTO ${USERS_TABLE_NAME} (user_id, user_name, phone_number, avatar, online)
       VALUES ($1, $2, $3, $4, $5)
       RETURNING *
     `;

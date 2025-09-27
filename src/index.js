@@ -82,9 +82,9 @@ fastifyServer.ready().then(() => {
       console.log('Сообщение от клиента:', data);
 
       try {
-        const { placeId, userId, text } = data;
+        const { placeId, user, text } = data;
 
-        const newMessage = await RoomMessages.createMessage(placeId, userId, text);
+        const newMessage = await RoomMessages.createMessage(placeId, user.id, text);
 
         socket.emit('server_response', { message: 'Сообщение получено!' });
         fastifyServer.io.to(placeId).emit('new_message', newMessage);

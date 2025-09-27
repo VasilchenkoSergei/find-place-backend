@@ -1,4 +1,4 @@
-import ChatRoom, { CHAT_ROOMS_TABLE_NAME } from './chatRoom.js';
+import ChatRoom from './chatRoom.js';
 import RoomMessages from './roomMessages.js';
 import User from './user.js';
 
@@ -7,7 +7,7 @@ class DatabaseInitialize {
     try {
       await User.createUsersTable();
       await ChatRoom.createChatRoomsTable();
-      await RoomMessages.createRoomMessagesTable(CHAT_ROOMS_TABLE_NAME);
+      await RoomMessages.createRoomMessagesTable();
     } catch (error) {
       console.error('Ошибка инициализации Базы данных - ', error);
     }

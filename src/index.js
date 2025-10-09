@@ -35,6 +35,12 @@ fastifyServer.post('/create-user', async (request, reply) => {
   reply.send(user);
 });
 
+fastifyServer.post('/auth-user', async (request, reply) => {
+  const user = await User.authUser(request.body);
+
+  reply.send(user);
+});
+
 fastifyServer.post('/create-user-room', async (request, reply) => {
   const { placeId, placeName } = request.body;
   const userRoom = await ChatRoom.createRoom(placeId, placeName);

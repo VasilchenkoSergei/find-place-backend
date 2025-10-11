@@ -10,11 +10,10 @@ class RoomMessages {
       CREATE TABLE IF NOT EXISTS ${MESSAGES_TABLE_NAME} (
         id SERIAL PRIMARY KEY,
         place_id VARCHAR(150) REFERENCES ${CHAT_ROOMS_TABLE_NAME}(place_id) ON DELETE CASCADE,
-        user_id VARCHAR(150) REFERENCES ${USERS_TABLE_NAME}(user_id) ON DELETE CASCADE,
+        user_id UUID REFERENCES ${USERS_TABLE_NAME}(user_id) ON DELETE CASCADE,
         text TEXT NOT NULL,
-        sent_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        created_at BIGINT DEFAULT (EXTRACT(EPOCH FROM CURRENT_TIMESTAMP) * 1000)::BIGINT,
+        updated_at BIGINT DEFAULT (EXTRACT(EPOCH FROM CURRENT_TIMESTAMP) * 1000)::BIGINT
       )
     `;
 
@@ -30,21 +29,25 @@ class RoomMessages {
       SELECT 
         messages.id, 
         messages.text, 
-        messages.sent_date as "sentDate", 
-        users.user_id as "userId",
-        users.user_name as "userName",
-        users.avatar
+        messages.created_at as "createdAt", 
+        json_build_object(
+          'userId', users.user_id,
+          'name', users.name
+        ) as "user"
       FROM ${MESSAGES_TABLE_NAME} messages
       LEFT JOIN ${USERS_TABLE_NAME} users ON messages.user_id = users.user_id
       WHERE messages.place_id = $1 
-      ORDER BY messages.sent_date ASC 
+      ORDER BY messages.created_at ASC 
       LIMIT $2
     `;
     const values = [placeId, limit];
 
     try {
       const result = await DB.query(query, values);
-      return result.rows;
+      return result.rows.map((row) => ({
+        ...row,
+        createdAt: Number(row.createdAt),
+      }));
     } catch (error) {
       console.error('Ошибка при получении сообщений:', error);
       throw error;
